@@ -1,0 +1,17 @@
+# Python 3.11.8
+# conda install -c conda-forge gdal
+Pyarrow
+pandas
+numpy
+matplotlib
+seaborn
+dash
+plotly
+geopandas
+dash-bootstrap-components
+flask-caching
+traitlets
+nbformat
+rasterio
+georasters
+openpyxl

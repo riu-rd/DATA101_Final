@@ -1,0 +1,42 @@
+#main {
+    background-color: #75cff0;
+}
+
+#graph-bio {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+}
+
+.div-temp {
+   top: 5%;
+   left: 15%;
+   width: 350px;
+   height: 500px;
+   position: absolute;
+   z-index: 10;
+   border-radius: 10px;
+   background-color: white;
+   font-size: 10px;
+   padding: 15px;
+   transform: scale(0.8);
+}
+
+
+
+h1 {
+    font-size:20px;
+}
+
+#bar-temp {
+    overflow:auto;
+}
+
+.dropdown {
+    position:absolute;
+    z-index: 10;
+    width: 25%;
+    top: 5%;
+    left: 15%;
+}
+

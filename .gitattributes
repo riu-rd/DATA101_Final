@@ -1,3 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 app/plotly_interactions.ipynb filter=lfs diff=lfs merge=lfs -text
+app/data/temperature.geojson filter=lfs diff=lfs merge=lfs -text
