@@ -1,10 +1,13 @@
 # Python 3.11.8
 # conda install -c conda-forge gdal
+# matplotlib
+# seaborn
+# rasterio
+# georasters
+# openpyxl
 Pyarrow
 pandas
 numpy
-matplotlib
-seaborn
 dash
 plotly
 geopandas
@@ -12,7 +15,4 @@ dash-bootstrap-components
 flask-caching
 traitlets
 nbformat
-rasterio
-georasters
-openpyxl
 gunicorn
