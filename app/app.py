@@ -1,27 +1,25 @@
 # Setup Folders, Tokens, and Dependencies
-from dash import Dash, html, dcc, callback, Output, Input, page_container
+from dash import Dash, html, page_container
 import dash_bootstrap_components as dbc
-import plotly.express as px
-import pandas as pd
-import numpy as np
-import geopandas as gpd
-from pathlib import Path
 from flask_caching import Cache
 
-datasets_folder = Path('./data')
-px.set_mapbox_access_token(open(".mapbox_token").read())
-
 # Create the Application
-app = Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN, 'styles.css'], use_pages=True)
+app = Dash(__name__, external_stylesheets=[dbc.themes.SLATE, 'styles.css'], use_pages=True)
+app._favicon = ("icon.svg")
 cache = Cache(app.server, config={
     'CACHE_TYPE': 'filesystem',
     'CACHE_DIR': 'cache-directory'
 })
 
-app.layout = html.Div(id='main', children=[
-    dcc.Link("Temperature", href='/'),
-    dcc.Link("Biodiversity", href='/biodiversity'),
-    html.Hr(),
+navbar = dbc.NavbarSimple(className='container-fluid', brand="EcoSphere Watch", brand_href="/", color="primary", dark=True, children=[
+    dbc.NavItem(dbc.NavLink("Climate History", href="/temperature")),
+    dbc.NavItem(dbc.NavLink("Biodiversity Insights", href="/biodiversity")),
+    dbc.NavItem(dbc.NavLink("Disaster Occurrences", href="/disaster")),
+])
+
+# Application Layout
+app.layout = html.Main(id='main', children=[
+    navbar,
     page_container
 ])
 
