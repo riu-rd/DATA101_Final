@@ -6,7 +6,8 @@ from flask_caching import Cache
 # Create the Application
 app = Dash(__name__, external_stylesheets=[dbc.themes.SLATE, 'styles.css'], use_pages=True)
 app._favicon = ("icon.svg")
-cache = Cache(app.server, config={
+server = app.server
+cache = Cache(server, config={
     'CACHE_TYPE': 'filesystem',
     'CACHE_DIR': 'cache-directory'
 })
