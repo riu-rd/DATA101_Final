@@ -12,7 +12,7 @@ cache = Cache(server, config={
     'CACHE_DIR': 'cache-directory'
 })
 
-navbar = dbc.NavbarSimple(className='container-fluid', brand="EcoSphere Watch", brand_href="/", color="primary", dark=True, children=[
+navbar = dbc.NavbarSimple(className='container-fluid', brand="Klima Insights", brand_href="/", color="primary", dark=True, children=[
     dbc.NavItem(dbc.NavLink("Climate History", href="/temperature")),
     dbc.NavItem(dbc.NavLink("Biodiversity Insights", href="/biodiversity")),
     dbc.NavItem(dbc.NavLink("Disaster Occurrences", href="/disaster")),
