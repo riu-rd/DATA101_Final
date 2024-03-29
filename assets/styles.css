@@ -56,9 +56,6 @@ to {background-position: -100px 0px;background-size:1500px;}
       margin: 0;
       padding: 0;
     }
-    .temp-bar-container {
-      transform: scale(0.5)
-    }
 }
 @media (min-width: 768px) {
     .card {
@@ -147,4 +144,7 @@ to {background-position: -100px 0px;background-size:1500px;}
   width: 95%;
 }
 
-/* GRAPHS */
+.temp-bar-container {
+  height: 800px;
+  min-height: 800px;
+}

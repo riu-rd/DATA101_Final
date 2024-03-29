@@ -19,12 +19,6 @@ temp_gdf = gpd.GeoDataFrame(pd.concat([temp_1, temp_2, temp_3], ignore_index=Tru
 register_page(__name__, path='/temperature', name='Temperature', title='Klima Insights | Temperature')
 
 layout = dbc.Container(className="d-flex justify-content-center align-items-center full-height full-width my-3", fluid=True, children=[
-  dcc.Interval(
-  id="load_interval", 
-  n_intervals=0, 
-  max_intervals=0, #<-- only run once
-  interval=1
-  ),
   dbc.Row(children=[
     dbc.Col(className="bg-light rounded", width=12, md=4, children=[
       html.Div(className="full-width-container text-dark", children=[
@@ -68,7 +62,9 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
     ]),
     dbc.Col(className="rounded", width=12, md=8, children=[
       html.Div(className="text-dark", children=[
-          dcc.Loading(type="circle", children=[dcc.Graph(id="temp-map")])
+          dcc.Dropdown(options=temp_gdf.decade.unique(), value='1960s', id='temp-map-dropdown',
+                                       multi=False, searchable=False, clearable=False),
+          dcc.Loading(type="circle", children=[dcc.Graph(id="temp-map", responsive=True)])
         ])
     ])
   ])
@@ -95,49 +91,56 @@ def update_bar_fig(island_value):
     # Create the Figure with horizontal orientation
     bar_fig = px.bar(island_gdf, y='name', x='value', animation_frame="decade", orientation='h')
     bar_fig.update_layout(
-        autosize=True,
         height=750,
-        title=f'Average Temperature per Province in {island_value}',
-        margin=dict(l=20, r=20, t=50, b=50),
+        title=f'Average Temperature per Province<br>in {island_value}',
+        margin=dict(l=20, r=20, t=75, b=50),
+        yaxis=dict(
+            title="Province Name",
+            tickfont=dict(size=11)  # Adjust tick font size to prevent overlap
+        ),
+        xaxis=dict(
+            title="Temperature (°C)",
+            range=[0, 35],
+            tickmode='linear',
+            dtick=5,
+            tickfont=dict(size=13),  # Adjust tick font size to prevent overlap
+            tickangle=0
+        ),
+        font=dict(  # Adjust font size for main title
+            size=12
+        )
     )
-    bar_fig.update_yaxes(title_text="Province Name")  
-    bar_fig.update_xaxes(title_text="Temperature (°C)", 
-                    range=[0, 34], 
-                    tickmode='linear', 
-                    dtick=2,  
-                    tickangle=0)    
-
     hover_template = "Average Temperature in<br>" + \
-                    "<b>%{y}</b><br>" + \
-                    "during the %{customdata[0]}:<br>" + \
-                    "%{customdata[1]:.2f}°C"
+                     "<b>%{y}</b><br>" + \
+                     "during the %{customdata[0]}:<br>" + \
+                     "%{customdata[1]:.2f}°C"
     bar_fig.update_traces(hovertemplate=hover_template,
-                      customdata=island_gdf[['decade', 'value']])
+                           customdata=island_gdf[['decade', 'value']])
 
     for frame in bar_fig.frames:
         frame.data[0].hovertemplate = hover_template
         frame.data[0].customdata = island_gdf[['decade', 'value']]
     bar_fig.update_layout(
         updatemenus=[{
-            'direction': 'left',  
+            'direction': 'left',
             'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
             'showactive': False,
             'type': 'buttons',
-            'x': 0.06,  
+            'x': 0.06,
             'xanchor': 'right',
-            'y': -0.14,  # Position the menu below the graph
+            'y': -0.14,
             'yanchor': 'top'
         }],
         sliders=[{
             'active': 0,
-            'x': 0.98,   
-            'y': -0.08,  # Position the slider below the graph
+            'x': 0.98,
+            'y': -0.08,
             'xanchor': 'right',
             'yanchor': 'top',
             'transition': {'duration': 300, 'easing': 'cubic-in-out'},
             'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
             'currentvalue': {
-                'font': {'size': 16},
+                'font': {'size': 15},
                 'prefix': 'Decade:',
                 'visible': True,
                 'xanchor': 'right',
@@ -146,73 +149,72 @@ def update_bar_fig(island_value):
         }]
     )
 
+    highest_temp_1960 = island_gdf[island_gdf['decade'] == '1960s']['value'].max()  # Highest temperature for the decade 1960
+    bar_fig.add_shape(  # Line representing highest temperature in the 1960s
+        type="line",
+        x0=highest_temp_1960,
+        y0=0,
+        x1=highest_temp_1960,
+        y1=island_gdf.name.nunique(),
+        line=dict(
+            color="red",
+            width=1,
+            dash="dash",
+        ),
+    )
+
+    bar_fig.add_annotation(
+        x=highest_temp_1960 + 1,
+        y=island_gdf.name.nunique() /1.25,  # Adjust the y position of the label
+        text="Highest Temp in the 1960s",
+        showarrow=True,
+        arrowhead=1,
+        ax=0,
+        ay=0,  # Adjust the arrow position
+        font=dict(
+            color="red",
+            size=12
+        ),
+        align="left",
+        textangle=90  # Tilt the text 90 degrees
+    )
+
     return bar_fig
 
 # Map Figure
 @callback(
     Output('temp-map', 'figure'),
-    Input(component_id="load_interval", component_property="n_intervals")
+    Input('temp-map-dropdown', 'value')
 )
-def update_map_fig(n_intervals):
-    temp_sliced = temp_gdf[(temp_gdf['decade'].isin(['1960s', '1980s', '2000s', '2020s']) == True)].reset_index()
+def update_map_fig(decade_value):
+    temp_sliced = temp_gdf[(temp_gdf['decade'].isin([f'{decade_value}']) == True)].reset_index()
     map_fig = px.choropleth_mapbox(temp_sliced,
-                              geojson=temp_sliced.geometry,
-                              locations=temp_sliced.index,
-                              color='value',
-                              color_continuous_scale='turbo',
-                              range_color=[25, 32.5], 
-                              mapbox_style='streets',
-                              zoom=5, 
-                              center={"lat": 12.8797, "lon": 121.7740},
-                              opacity=0.6,
-                              animation_frame="decade"
-                              )
-    map_fig.update_layout(coloraxis_colorbar=dict(title="Average<br>Temperature (°C)",yanchor="top",xanchor='right',
+                                    geojson=temp_sliced.geometry,
+                                    locations=temp_sliced.index,
+                                    color='value',
+                                    color_continuous_scale='turbo',
+                                    range_color=[25, 33],
+                                    mapbox_style='streets',
+                                    zoom=5,
+                                    center={"lat": 12.8797, "lon": 121.7740},
+                                    opacity=0.6,
+                                    )
+    map_fig.update_layout(
+        coloraxis_colorbar=dict(title=f"{decade_value}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='right',
                                 y=1, x=1, ticks="outside", thickness=10, title_font_color='#0c232c',
-                                tickvals=[i for i in range(25, 33)],  
-                                tickmode='array',  
+                                tickvals=[i for i in range(25, 33)],
+                                tickmode='array',
                                 ticksuffix='°C',
                                 tickfont=dict(
-                                size=12,
-                                color='#0c232c')
-                            )
-                        )
-    map_fig.update_layout(margin=dict(l=0, r=0, t=0, b=0),
-        updatemenus=[{
-            'buttons': [
-                    {'visible': True}
-            ],
-            'direction': 'left',  
-            'pad': {'t': 0, 'b': 0, 'l': 0, 'r': 0},  
-            'showactive': False,
-            'type': 'buttons',
-            'x': 0.1,  
-            'xanchor': 'right',
-            'y': 0.24,  
-            'yanchor': 'top'
-        }],
-        sliders=[{
-            'active': 0,
-            'x': 0.05,   
-            'y': 0.19, 
-            'len': 0.5,
-            'xanchor': 'left',
-            'yanchor': 'top',
-            'currentvalue': {
-                'font': {'size': 16},
-                'prefix': 'Decade:',
-                'visible': True,
-                'xanchor': 'right'
-            },
-            'transition': {'duration': 1000, 'easing': 'cubic-in-out'},
-            'pad': {'t': 0, 'b': 0, 'l': 0, 'r': 0}
-        }]
+                                    size=12,
+                                    color='#0c232c')
+                                )
     )
-    hover_template = '<b>%{customdata[0]}</b><br>Average Temp: %{customdata[1]:.2f}°C<extra></extra>'
+    map_fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+    )
+    hover_template = '<b>%{customdata[0]}</b><br>during the %{customdata[1]}<br>Average Temp: %{customdata[2]:.2f}°C<extra></extra>'
     map_fig.update_traces(hovertemplate=hover_template,
-                      customdata=temp_sliced[['name', 'value']])
-    for frame in map_fig.frames:
-        frame.data[0].hovertemplate = hover_template
-        frame.data[0].customdata = temp_sliced[['name', 'value']]
-    
+                           customdata=temp_sliced[['name', 'decade', 'value']])
+
     return map_fig
