@@ -5,9 +5,9 @@ import dash_bootstrap_components as dbc
 # Initialize Page
 register_page(__name__, path='/', name='Start', title='Klima Insights')
 
-layout = dbc.Container(className='d-flex justify-content-center align-items-center full-height full-width py-5', fluid=True, children=[
+layout = dbc.Container(className='d-flex justify-content-center align-items-center full-height full-width py-5 z-3', fluid=True, children=[
   html.Div(className='card', children=[
-    html.Strong(children=["Are You Ready to Uncover the Truth about Climate Change in the Philippines?"]),
+    html.Strong(className="text-primary", children=["Are You Ready to Uncover the Truth about Climate Change in the Philippines?"]),
     html.Div(className='card__body', children=[
           html.P(
                 "Delve into the heart of environmental change with Klima Insights. Our dynamic dashboard presents "

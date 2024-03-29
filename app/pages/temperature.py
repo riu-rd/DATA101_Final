@@ -18,9 +18,9 @@ temp_gdf = gpd.GeoDataFrame(pd.concat([temp_1, temp_2, temp_3], ignore_index=Tru
 # Initialize Page
 register_page(__name__, path='/temperature', name='Temperature', title='Klima Insights | Temperature')
 
-layout = dbc.Container(className="d-flex justify-content-center align-items-center full-height full-width my-3", fluid=True, children=[
+layout = dbc.Container(className="d-flex justify-content-center align-items-center full-height full-width my-3 z-3", fluid=True, children=[
   dbc.Row(children=[
-    dbc.Col(className="bg-light rounded", width=12, md=4, children=[
+    dbc.Col(className="bg-light rounded z-3", width=12, md=4, children=[
       html.Div(className="full-width-container text-dark", children=[
           html.H3(className="mt-2", children=[
               "Charting the Climate Shift: Examining Temperature Trends in the Philippines Across Decades"
@@ -33,15 +33,15 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
           ]),
           dbc.Modal(
             [
-                dbc.ModalHeader(dbc.ModalTitle("Average Temperature per Province")),
+                dbc.ModalHeader(dbc.ModalTitle(className="text-secondary", children=["Average Temperature per Province"])),
                 dbc.ModalBody(children=[
                     dbc.Row(children=[
                         dbc.Col(width=12, md=4, children=[
                           html.Div(children=[
-                            html.H4(className="mt-2", children=[
+                            html.H4(className="mt-2 text-light", children=[
                                 " Unraveling Temperature Trends Across Philippine Provinces from the 1960s to the 2020s"
                             ]),
-                            html.P(children=[
+                            html.P(className="text-light", children=[
                                 "Embarking on a comprehensive exploration, we delve into the temperature data per province across the Philippines spanning from the 1960s to the 2020s. Through meticulous analysis, a discernible pattern emerges, indicating a modest uptick in temperatures as the decades progress. While the increase may seem subtle, it's a notable phenomenon worthy of attention. The comparative visualization reveals a trend reflective of broader climate shifts, hinting at the ongoing environmental changes affecting the nation's provinces. These findings underscore the importance of monitoring and understanding regional temperature variations, as they hold implications for both local communities and broader climate resilience efforts."
                             ]),
                           ])
@@ -153,9 +153,9 @@ def update_bar_fig(island_value):
     bar_fig.add_shape(  # Line representing highest temperature in the 1960s
         type="line",
         x0=highest_temp_1960,
-        y0=0,
+        y0=-1,
         x1=highest_temp_1960,
-        y1=island_gdf.name.nunique(),
+        y1=island_gdf.name.nunique()-0.5,
         line=dict(
             color="red",
             width=1,
@@ -165,7 +165,7 @@ def update_bar_fig(island_value):
 
     bar_fig.add_annotation(
         x=highest_temp_1960 + 1,
-        y=island_gdf.name.nunique() /1.25,  # Adjust the y position of the label
+        y=island_gdf.name.nunique() / 1.3,  # Adjust the y position of the label
         text="Highest Temp in the 1960s",
         showarrow=True,
         arrowhead=1,
@@ -196,12 +196,12 @@ def update_map_fig(decade_value):
                                     range_color=[25, 33],
                                     mapbox_style='streets',
                                     zoom=5,
-                                    center={"lat": 12.8797, "lon": 121.7740},
+                                    center={"lat": 12.8797, "lon": 122.7740},
                                     opacity=0.6,
                                     )
     map_fig.update_layout(
-        coloraxis_colorbar=dict(title=f"{decade_value}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='right',
-                                y=1, x=1, ticks="outside", thickness=10, title_font_color='#0c232c',
+        coloraxis_colorbar=dict(title=f"{decade_value}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='left',
+                                y=1, x=0, ticks="outside", ticklabelposition="outside left", thickness=10, title_font_color='#0c232c',
                                 tickvals=[i for i in range(25, 33)],
                                 tickmode='array',
                                 ticksuffix='°C',
