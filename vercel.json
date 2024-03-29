@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "klima-insights",
   "builds": [
       {
           "src": "app/index.py",
