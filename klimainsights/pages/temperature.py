@@ -5,9 +5,10 @@ import plotly.express as px
 import pandas as pd
 import geopandas as gpd
 from pathlib import Path
+from environment.settings import MAPBOX_TOKEN
 
 datasets_folder = Path('./data')
-px.set_mapbox_access_token(open(".mapbox_token").read())
+px.set_mapbox_access_token(MAPBOX_TOKEN)
 
 # Import Data
 temp_1 = gpd.read_file(datasets_folder / "temp_1.geojson")

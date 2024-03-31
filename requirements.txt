@@ -16,3 +16,4 @@ flask-caching
 traitlets
 nbformat
 gunicorn
+python-dotenv

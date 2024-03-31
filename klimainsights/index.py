@@ -1,28 +1,19 @@
-# Setup Folders, Tokens, and Dependencies
 from dash import Dash, html, page_container
 import dash_bootstrap_components as dbc
 
-class MainApplication:
-    def __init__(self):
-        self.__app = Dash(__name__, external_stylesheets=[dbc.themes.SOLAR, 'styles.css'], use_pages=True, meta_tags=[
-        {"name": "viewport", "content": "width=device-width, initial-scale=1"}
-        ])
-        self.set_layout()
+from app import app
+from environment.settings import APP_HOST, APP_PORT, APP_DEBUG
 
-    @property
-    def app(self):
-        return self.__app
-    
-    def set_layout(self):
-        self.app._favicon = ("icon.svg")
+server = app.server
 
-        navbar = dbc.NavbarSimple(className='container-fluid z-3', brand="Klima Insights", brand_href="/", color="primary", dark=True, children=[
+def serve_content():
+    navbar = dbc.NavbarSimple(className='container-fluid z-3', brand="Klima Insights", brand_href="/", color="primary", dark=True, children=[
             dbc.NavItem(dbc.NavLink("Climate History", href="/temperature")),
             dbc.NavItem(dbc.NavLink("Biodiversity Insights", href="/biodiversity")),
             dbc.NavItem(dbc.NavLink("Disaster Occurrences", href="/disaster")),
-        ])
+    ])
 
-        self.app.layout= html.Main(id='main', children=[
+    return html.Main(id='main', children=[
             html.Div(
                 id="leaves",
                 children=[
@@ -44,10 +35,10 @@ class MainApplication:
                 ]),
             navbar,
             page_container
-        ])
+    ])
 
-Application = MainApplication()
-app = Application.app.server
+app._favicon = ("icon.svg")
+app.layout = serve_content()
 
-if __name__ == "__main__":
-    Application.app.run(port=8080, dev_tools_ui=True, debug=True, host="127.0.0.1")
+if __name__ == '__main__':
+    app.run_server(debug=APP_DEBUG, host=APP_HOST, port=APP_PORT)
