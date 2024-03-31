@@ -62,4 +62,4 @@ python index.py
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
 
-App deployed using Docker and Hugging Face
+App deployed using Docker and Hugging Face.
