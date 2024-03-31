@@ -1,3 +1,12 @@
+---
+title: Klima Insights
+emoji: 🌳
+colorFrom: green
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # DATA101 Final Application
 
 This is the repository for the data visualization application made from Plotly Dash for the DATA101 Final Project
@@ -44,9 +53,11 @@ All files that are used to do Exploratory Data Analysis is stored in this [Googl
 
 ### Running the Application
 
-- go to the `/app` directory
+- go to the `/klimainsights` directory
 - Run:
 
 ```bash
 python index.py
 ```
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
