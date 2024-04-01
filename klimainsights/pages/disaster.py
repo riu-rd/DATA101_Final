@@ -12,7 +12,7 @@ datasets_folder = Path('./data')
 px.set_mapbox_access_token(MAPBOX_TOKEN)
 
 # Import Data
-temp_gdf = gpd.read_file(datasets_folder / 'disaster.geojson')
+disaster_gdf = gpd.read_file(datasets_folder / 'disaster.geojson')
 
 # Initialize Page
 register_page(__name__, path='/disaster', name='Disaster', title='Klima Insights | Disaster')

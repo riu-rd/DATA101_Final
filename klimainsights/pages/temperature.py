@@ -11,10 +11,7 @@ datasets_folder = Path('./data')
 px.set_mapbox_access_token(MAPBOX_TOKEN)
 
 # Import Data
-temp_1 = gpd.read_file(datasets_folder / "temp_1.geojson")
-temp_2 = gpd.read_file(datasets_folder / "temp_2.geojson")
-temp_3 = gpd.read_file(datasets_folder / "temp_3.geojson")
-temp_gdf = gpd.GeoDataFrame(pd.concat([temp_1, temp_2, temp_3], ignore_index=True))
+temperature_gdf = gpd.read_file(datasets_folder / "temperature.geojson")
 
 # Initialize Page
 register_page(__name__, path='/temperature', name='Temperature', title='Klima Insights | Temperature')
@@ -63,7 +60,7 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
     ]),
     dbc.Col(className="rounded", width=12, md=8, children=[
       html.Div(className="text-dark", children=[
-          dcc.Dropdown(options=temp_gdf.decade.unique(), value='1960s', id='temp-map-dropdown',
+          dcc.Dropdown(options=['1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s'], value='1960s', id='temp-map-dropdown',
                                        multi=False, searchable=False, clearable=False),
           dcc.Loading(type="circle", children=[dcc.Graph(id="temp-map", responsive=True)])
         ])
@@ -88,7 +85,8 @@ def toggle_modal(n1, is_open):
     Input('temp-bar-dropdown', 'value')
 )
 def update_bar_fig(island_value):
-    island_gdf = temp_gdf[(temp_gdf['island_group'].isin([island_value]) == True)] # Change Island Group based on Dropdown Value
+    selected_gdf = temperature_gdf[(temperature_gdf['island_group'].isin(['Luzon']) == True)].drop(columns=['geometry'])
+    island_gdf = pd.melt(selected_gdf, id_vars=['name', 'admin_div', 'island_group', 'Region'], var_name='decade', value_name='value')
     # Create the Figure with horizontal orientation
     bar_fig = px.bar(island_gdf, y='name', x='value', animation_frame="decade", orientation='h')
     bar_fig.update_layout(
@@ -188,11 +186,10 @@ def update_bar_fig(island_value):
     Input('temp-map-dropdown', 'value')
 )
 def update_map_fig(decade_value):
-    temp_sliced = temp_gdf[(temp_gdf['decade'].isin([f'{decade_value}']) == True)].reset_index()
-    map_fig = px.choropleth_mapbox(temp_sliced,
-                                    geojson=temp_sliced.geometry,
-                                    locations=temp_sliced.index,
-                                    color='value',
+    map_fig = px.choropleth_mapbox(temperature_gdf,
+                                    geojson=temperature_gdf.geometry,
+                                    locations=temperature_gdf.index,
+                                    color=decade_value,
                                     color_continuous_scale='turbo',
                                     range_color=[25, 33],
                                     mapbox_style='streets',
@@ -214,8 +211,8 @@ def update_map_fig(decade_value):
     map_fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
     )
-    hover_template = '<b>%{customdata[0]}</b><br>during the %{customdata[1]}<br>Average Temp: %{customdata[2]:.2f}°C<extra></extra>'
+    hover_template = '<b>%{customdata[0]}</b><br>during the '+ decade_value +'<br>Average Temp: %{customdata[1]:.2f}°C<extra></extra>'
     map_fig.update_traces(hovertemplate=hover_template,
-                           customdata=temp_sliced[['name', 'decade', 'value']])
+                           customdata=temperature_gdf[['name', decade_value]])
 
     return map_fig

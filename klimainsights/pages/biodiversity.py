@@ -12,7 +12,7 @@ datasets_folder = Path('./data')
 px.set_mapbox_access_token(MAPBOX_TOKEN)
 
 # Import Data
-temp_gdf = gpd.read_file(datasets_folder / 'biodiversity_land.geojson')
+biodiversity_gdf = gpd.read_file(datasets_folder / 'biodiversity.geojson')
 
 # Initialize Page
 register_page(__name__, path='/biodiversity', name='Biodiversity', title='Klima Insights | Biodiversity')
