@@ -124,9 +124,26 @@ html, body  {
   width: 95%;
 }
 
+.w-100 {
+  width: 100%;
+}
+
+.flex-gap-20 {
+  display: flex;
+  gap: 20px;
+}
+
 .temp-bar-container {
   height: 800px;
   min-height: 800px;
+}
+
+.disaster-map-height {
+  height: 55rem;
+}
+
+.overflow-hidden {
+  overflow: hidden;
 }
 
 /* BACKGROUND */
