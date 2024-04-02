@@ -74,10 +74,10 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
                       dbc.Col(width=12, md=4, children=[
                         html.Div(children=[
                           html.H4(className="mt-2 text-light", children=[
-                              "Analyzing Regional Disasters: A Call to Action for Disaster Mitigation in the Philippines"
+                              "Deeper Insights into Disaster Trends"
                           ]),
                           html.P(className="text-light", children=[
-                              "Delving into deeper analysis, we can compare the occurrence of disasters in each province or region within a particular island group using the bar graph displayed on the right. Observing the frequency of disasters in specific areas and comparing them with others alerts us to the urgent need for action, no matter how small, to mitigate and reduce these calamities."
+                              "Taking a closer look, we can compare the frequency of disasters in each province or region within a specific island group using the bar graph provided on the right. Noticing the disparity in disaster occurrences among different areas raises awareness of the necessity to take proactive measures, regardless of their scale, to mitigate and minimize future disasters."
                           ]),
                         ])
                       ]),
