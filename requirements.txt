@@ -12,6 +12,7 @@ dash
 plotly
 geopandas
 dash-bootstrap-components
+dash_daq
 flask-caching
 traitlets
 nbformat

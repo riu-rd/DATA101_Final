@@ -1,5 +1,5 @@
 # Setup Folders, Tokens, and Dependencies
-from dash import Dash, html, dcc, callback, Output, Input, State, register_page
+from dash import html, dcc, callback, Output, Input, State, register_page
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
@@ -32,6 +32,18 @@ region_count('Earthquake Count','Region_earth')
 region_count('Volcanic Activity Count','Region_vol')
 region_count('Mass Movement Count','Region_mass')
 region_count('Drought Count','Region_drought')
+
+melt_value = temperature_gdf.drop(columns=[col for col in temperature_gdf.columns if 'TempDiff' in col])
+melt_value.columns = [col.split('_')[0] if '_value' in col else col for col in melt_value.columns]
+melt_value = melt_value.melt(id_vars=['name', 'geometry', 'admin_div', 'island_group', 'Region'], 
+                            var_name='decade', 
+                            value_name='value')
+melt_tempdiff = temperature_gdf.drop(columns=[col for col in temperature_gdf.columns if 'value' in col])
+melt_tempdiff.columns = [col.split('_')[0] if '_TempDiff' in col else col for col in melt_tempdiff.columns]
+melt_tempdiff = melt_tempdiff.melt(id_vars=['name', 'geometry', 'admin_div', 'island_group', 'Region'], 
+                            var_name='decade', 
+                            value_name='TempDiff')
+temp_melted_gdf = pd.merge(melt_value, melt_tempdiff, on=['name', 'geometry', 'admin_div', 'island_group', 'Region', 'decade'])
 
 # Initialize Page
 register_page(__name__, path='/disaster', name='Disaster', title='Klima Insights | Disaster')
@@ -129,14 +141,14 @@ def update_line(division, click_data):
         curr_div = 'name'
     else:
         return
-    selected_gdf = temperature_gdf[(temperature_gdf[curr_div].isin([data]) == True)].drop(columns=['geometry'])
-    island_gdf = pd.melt(selected_gdf, id_vars=['name', 'admin_div', 'island_group', 'Region'], var_name='decade', value_name='value')
+    
+    island_gdf = temp_melted_gdf[(temp_melted_gdf[curr_div].isin([data]) == True)].drop(columns=['geometry'])
 
     line_fig = px.line(island_gdf, x='decade', y='value',color='name')
     line_fig.update_layout(
         autosize=True,  
         height=500,
-        title='Change in Temperature in ' + data,
+        title='Change in Avg Temperature in ' + data,
         yaxis=dict(
             range=[25, 32],
             tickmode='linear',

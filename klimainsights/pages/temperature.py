@@ -6,12 +6,27 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 from environment.settings import MAPBOX_TOKEN
+import dash_daq as daq
 
 datasets_folder = Path('./data')
 px.set_mapbox_access_token(MAPBOX_TOKEN)
 
 # Import Data
 temperature_gdf = gpd.read_file(datasets_folder / "temperature.geojson")
+def remove_value(string):
+    return string[:-6] if string.endswith('_value') else string
+
+melt_value = temperature_gdf.drop(columns=[col for col in temperature_gdf.columns if 'TempDiff' in col])
+melt_value.columns = [col.split('_')[0] if '_value' in col else col for col in melt_value.columns]
+melt_value = melt_value.melt(id_vars=['name', 'geometry', 'admin_div', 'island_group', 'Region'], 
+                            var_name='decade', 
+                            value_name='value')
+melt_tempdiff = temperature_gdf.drop(columns=[col for col in temperature_gdf.columns if 'value' in col])
+melt_tempdiff.columns = [col.split('_')[0] if '_TempDiff' in col else col for col in melt_tempdiff.columns]
+melt_tempdiff = melt_tempdiff.melt(id_vars=['name', 'geometry', 'admin_div', 'island_group', 'Region'], 
+                            var_name='decade', 
+                            value_name='TempDiff')
+temp_melted_gdf = pd.merge(melt_value, melt_tempdiff, on=['name', 'geometry', 'admin_div', 'island_group', 'Region', 'decade'])
 
 # Initialize Page
 register_page(__name__, path='/temperature', name='Temperature', title='Klima Insights | Temperature')
@@ -42,6 +57,12 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
                             html.P(className="text-light", children=[
                                 "This section delves into the temperature data per province across the Philippines spanning from the 1960s to the 2020s. Upon closer inspection, a discernible pattern emerges, indicating a modest uptick in temperatures as the decades progress. While the increase may seem subtle, it's a notable phenomenon worthy of attention. The comparative visualization reveals a trend reflective of broader climate shifts, hinting at the ongoing environmental changes affecting the nation's provinces. These findings underscore the importance of monitoring and understanding regional temperature variations, as they hold implications for both local communities and broader climate resilience efforts."
                             ]),
+                            daq.BooleanSwitch(
+                                id='temp-bar-switch',
+                                on=False,
+                                color="#b58900",
+                                label="Show Avg Temp Increase Relative to 1960s"
+                            )
                           ])
                         ]),
                         dbc.Col(className="temp-bar-container", width=12, md=8, children=[
@@ -60,8 +81,15 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
     ]),
     dbc.Col(className="rounded", width=12, md=8, children=[
       html.Div(className="text-dark", children=[
-          dcc.Dropdown(options=['1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s'], value='1960s', id='temp-map-dropdown',
-                                       multi=False, searchable=False, clearable=False),
+          dcc.Dropdown(options=[{'label': '1960s', 'value': '1960s_value'},
+                                {'label': '1970s', 'value': '1970s_value'},
+                                {'label': '1980s', 'value': '1980s_value'},
+                                {'label': '1990s', 'value': '1990s_value'},
+                                {'label': '2000s', 'value': '2000s_value'},
+                                {'label': '2010s', 'value': '2010s_value'},
+                                {'label': '2020s', 'value': '2020s_value'}], 
+                                value='1960s_value', id='temp-map-dropdown',
+                                multi=False, searchable=False, clearable=False),
           dcc.Loading(type="circle", children=[dcc.Graph(id="temp-map", responsive=True)])
         ])
     ])
@@ -82,103 +110,168 @@ def toggle_modal(n1, is_open):
 # Bar Figure
 @callback(
     Output('temp-bar', 'figure'),
-    Input('temp-bar-dropdown', 'value')
+    [Input('temp-bar-dropdown', 'value'),Input('temp-bar-switch', 'on')]
 )
-def update_bar_fig(island_value):
-    selected_gdf = temperature_gdf[(temperature_gdf['island_group'].isin(['Luzon']) == True)].drop(columns=['geometry'])
-    island_gdf = pd.melt(selected_gdf, id_vars=['name', 'admin_div', 'island_group', 'Region'], var_name='decade', value_name='value')
-    # Create the Figure with horizontal orientation
-    bar_fig = px.bar(island_gdf, y='name', x='value', animation_frame="decade", orientation='h')
-    bar_fig.update_layout(
-        height=750,
-        title=f'Average Temperature per Province<br>in {island_value}',
-        margin=dict(l=20, r=20, t=75, b=50),
-        yaxis=dict(
-            title="Province Name",
-            tickfont=dict(size=11)  # Adjust tick font size to prevent overlap
-        ),
-        xaxis=dict(
-            title="Temperature (°C)",
-            range=[0, 35],
-            tickmode='linear',
-            dtick=5,
-            tickfont=dict(size=13),  # Adjust tick font size to prevent overlap
-            tickangle=0
-        ),
-        font=dict(  # Adjust font size for main title
-            size=12
+def update_bar_fig(island_value, switch):
+    if switch:
+        island_gdf = temp_melted_gdf[(temp_melted_gdf['island_group'].isin([island_value])) & (temp_melted_gdf['decade'].isin(['1960s']) == False)].drop(columns=['geometry'])
+        # Create the Figure with horizontal orientation
+        bar1960_fig = px.bar(island_gdf, y='name', x='TempDiff', animation_frame="decade", orientation='h')
+        bar1960_fig.update_layout(
+            height=750,
+            title=f'Average Temperature Increase Relative to 1960s<br>Across {island_value} Provinces',
+            margin=dict(l=20, r=20, t=75, b=50),
+            yaxis=dict(
+                title="Province Name",
+                tickfont=dict(size=11)  # Adjust tick font size to prevent overlap
+            ),
+            xaxis=dict(
+                title="Temperature (°C)",
+                range=[0, 1.5],
+                tickmode='linear',
+                dtick=0.3,
+                tickfont=dict(size=13),  # Adjust tick font size to prevent overlap
+                tickangle=0
+            ),
+            font=dict(  # Adjust font size for main title
+                size=12
+            )
         )
-    )
-    hover_template = "Average Temperature in<br>" + \
-                     "<b>%{y}</b><br>" + \
-                     "during the %{customdata[0]}:<br>" + \
-                     "%{customdata[1]:.2f}°C"
-    bar_fig.update_traces(hovertemplate=hover_template,
-                           customdata=island_gdf[['decade', 'value']])
+        hover_template = "Avg Temperature Increase<br>" + \
+                        "Relative to 1960s<br>" + \
+                        "<b>in %{y}</b><br>" + \
+                        "during the %{customdata[0]}:<br>" + \
+                        "%{customdata[1]:.2f}°C"
+        bar1960_fig.update_traces(hovertemplate=hover_template,
+                            customdata=island_gdf[['decade', 'value']])
 
-    for frame in bar_fig.frames:
-        frame.data[0].hovertemplate = hover_template
-        frame.data[0].customdata = island_gdf[['decade', 'value']]
-    bar_fig.update_layout(
-        updatemenus=[{
-            'direction': 'left',
-            'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
-            'showactive': False,
-            'type': 'buttons',
-            'x': 0.06,
-            'xanchor': 'right',
-            'y': -0.14,
-            'yanchor': 'top'
-        }],
-        sliders=[{
-            'active': 0,
-            'x': 0.98,
-            'y': -0.08,
-            'xanchor': 'right',
-            'yanchor': 'top',
-            'transition': {'duration': 300, 'easing': 'cubic-in-out'},
-            'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
-            'currentvalue': {
-                'font': {'size': 15},
-                'prefix': 'Decade:',
-                'visible': True,
+        for frame in bar1960_fig.frames:
+            frame.data[0].hovertemplate = hover_template
+            frame.data[0].customdata = island_gdf[['decade', 'value']]
+        bar1960_fig.update_layout(
+            updatemenus=[{
+                'direction': 'left',
+                'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
+                'showactive': False,
+                'type': 'buttons',
+                'x': 0.06,
                 'xanchor': 'right',
-            },
-            'visible': True,
-        }]
-    )
+                'y': -0.14,
+                'yanchor': 'top'
+            }],
+            sliders=[{
+                'active': 0,
+                'x': 0.98,
+                'y': -0.08,
+                'xanchor': 'right',
+                'yanchor': 'top',
+                'transition': {'duration': 300, 'easing': 'cubic-in-out'},
+                'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
+                'currentvalue': {
+                    'font': {'size': 15},
+                    'prefix': 'Decade:',
+                    'visible': True,
+                    'xanchor': 'right',
+                },
+                'visible': True,
+            }]
+        )
+        return bar1960_fig
+    
+    else:
+        island_gdf = temp_melted_gdf[(temp_melted_gdf['island_group'].isin([island_value]) == True)].drop(columns=['geometry'])
+        # Create the Figure with horizontal orientation
+        bar_fig = px.bar(island_gdf, y='name', x='value', animation_frame="decade", orientation='h')
+        bar_fig.update_layout(
+            height=750,
+            title=f'Average Temperature per Province<br>in {island_value}',
+            margin=dict(l=20, r=20, t=75, b=50),
+            yaxis=dict(
+                title="Province Name",
+                tickfont=dict(size=11)  # Adjust tick font size to prevent overlap
+            ),
+            xaxis=dict(
+                title="Avg Temperature (°C)",
+                range=[0, 35],
+                tickmode='linear',
+                dtick=5,
+                tickfont=dict(size=13),  # Adjust tick font size to prevent overlap
+                tickangle=0
+            ),
+            font=dict(  # Adjust font size for main title
+                size=12
+            )
+        )
+        hover_template = "Average Temperature in<br>" + \
+                        "<b>%{y}</b><br>" + \
+                        "during the %{customdata[0]}:<br>" + \
+                        "%{customdata[1]:.2f}°C"
+        bar_fig.update_traces(hovertemplate=hover_template,
+                            customdata=island_gdf[['decade', 'value']])
 
-    highest_temp_1960 = island_gdf[island_gdf['decade'] == '1960s']['value'].max()  # Highest temperature for the decade 1960
-    bar_fig.add_shape(  # Line representing highest temperature in the 1960s
-        type="line",
-        x0=highest_temp_1960,
-        y0=-1,
-        x1=highest_temp_1960,
-        y1=island_gdf.name.nunique()-0.5,
-        line=dict(
-            color="red",
-            width=1,
-            dash="dash",
-        ),
-    )
+        for frame in bar_fig.frames:
+            frame.data[0].hovertemplate = hover_template
+            frame.data[0].customdata = island_gdf[['decade', 'value']]
+        bar_fig.update_layout(
+            updatemenus=[{
+                'direction': 'left',
+                'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
+                'showactive': False,
+                'type': 'buttons',
+                'x': 0.06,
+                'xanchor': 'right',
+                'y': -0.14,
+                'yanchor': 'top'
+            }],
+            sliders=[{
+                'active': 0,
+                'x': 0.98,
+                'y': -0.08,
+                'xanchor': 'right',
+                'yanchor': 'top',
+                'transition': {'duration': 300, 'easing': 'cubic-in-out'},
+                'pad': {'t': 10, 'b': 10, 'l': 10, 'r': 10},
+                'currentvalue': {
+                    'font': {'size': 15},
+                    'prefix': 'Decade:',
+                    'visible': True,
+                    'xanchor': 'right',
+                },
+                'visible': True,
+            }]
+        )
 
-    bar_fig.add_annotation(
-        x=highest_temp_1960 + 1,
-        y=island_gdf.name.nunique() / 1.3,  # Adjust the y position of the label
-        text="Highest Temp in the 1960s",
-        showarrow=True,
-        arrowhead=1,
-        ax=0,
-        ay=0,  # Adjust the arrow position
-        font=dict(
-            color="red",
-            size=12
-        ),
-        align="left",
-        textangle=90  # Tilt the text 90 degrees
-    )
+        highest_temp_1960 = island_gdf[island_gdf['decade'] == '1960s']['value'].max()  # Highest temperature for the decade 1960
+        bar_fig.add_shape(  # Line representing highest temperature in the 1960s
+            type="line",
+            x0=highest_temp_1960,
+            y0=-1,
+            x1=highest_temp_1960,
+            y1=island_gdf.name.nunique()-0.5,
+            line=dict(
+                color="red",
+                width=1,
+                dash="dash",
+            ),
+        )
 
-    return bar_fig
+        bar_fig.add_annotation(
+            x=highest_temp_1960 + 1,
+            y=island_gdf.name.nunique() / 1.3,  # Adjust the y position of the label
+            text="Highest Temp in the 1960s",
+            showarrow=True,
+            arrowhead=1,
+            ax=0,
+            ay=0,  # Adjust the arrow position
+            font=dict(
+                color="red",
+                size=12
+            ),
+            align="left",
+            textangle=90  # Tilt the text 90 degrees
+        )
+
+        return bar_fig
 
 # Map Figure
 @callback(
@@ -198,7 +291,7 @@ def update_map_fig(decade_value):
                                     opacity=0.6,
                                     )
     map_fig.update_layout(
-        coloraxis_colorbar=dict(title=f"{decade_value}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='left',
+        coloraxis_colorbar=dict(title=f"{remove_value(decade_value)}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='left',
                                 y=1, x=0, ticks="outside", ticklabelposition="outside left", thickness=10, title_font_color='#0c232c',
                                 tickvals=[i for i in range(25, 33)],
                                 tickmode='array',
@@ -211,8 +304,7 @@ def update_map_fig(decade_value):
     map_fig.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
     )
-    hover_template = '<b>%{customdata[0]}</b><br>during the '+ decade_value +'<br>Average Temp: %{customdata[1]:.2f}°C<extra></extra>'
+    hover_template = '<b>%{customdata[0]}</b><br>during the '+ remove_value(decade_value) +'<br>Average Temp: %{customdata[1]:.2f}°C<extra></extra>'
     map_fig.update_traces(hovertemplate=hover_template,
                            customdata=temperature_gdf[['name', decade_value]])
-
     return map_fig
