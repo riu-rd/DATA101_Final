@@ -45,10 +45,11 @@ All files that are used to do Exploratory Data Analysis is stored in this [Googl
   ```bash
   conda install -c conda-forge gdal
   ```
+- OPTIONAL: Uncomment Lines 3 - 7 in ```requirements.txt``` if you want to also run the EDA files
   ```bash
   pip install -r requirements.txt
   ```
-- If there are no errors, you should be able to run the app smoothly along with the EDA files.
+- If there are no errors, you should be able to run the app smoothly.
 - Remember to run everything inside your virtual environment.
 
 ### Running the Application
