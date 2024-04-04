@@ -133,7 +133,8 @@ def update_bar(region, species_type, bio_switch, click_data):
     # if region == "Sea":
     #     filtered_data = biodiversity_gdf[(biodiversity_gdf['area_type'].isin(['Sea']))].reset_index().drop(columns='index')
     # else:
-    filtered_data = biodiversity_gdf[biodiversity_gdf['island_group'] == region].reset_index().drop(columns='index').sort_values(by=species_type, ascending=True)
+    
+    filtered_data = biodiversity_gdf[biodiversity_gdf['island_group'] == region].sort_values(by=species_type, ascending=True).reset_index().drop(columns='index')
     
     if species_type == "total_species":
         txt = "Total"
@@ -144,7 +145,7 @@ def update_bar(region, species_type, bio_switch, click_data):
         if click_data is not None:
             data = click_data['points'][0]['customdata'][0] 
         else:
-            data = filtered_data['name'][0]
+            data = filtered_data['name'].iloc[-1]
 
         island_gdf = temp_melted_gdf[(temp_melted_gdf['name'].isin([data]) == True)].drop(columns=['geometry'])
         line_fig = px.line(island_gdf, x='decade', y='value',color='name')
