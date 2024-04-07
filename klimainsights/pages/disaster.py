@@ -142,7 +142,7 @@ def update_line(division, click_data):
     else:
         return
     
-    island_gdf = temp_melted_gdf[(temp_melted_gdf[curr_div].isin([data]) == True)].drop(columns=['geometry'])
+    island_gdf = temp_melted_gdf[(temp_melted_gdf[curr_div].isin([data]) == True)].drop(columns=['geometry']).sort_values(by=['name', 'decade'], ascending=True, ignore_index=True)
 
     line_fig = px.line(island_gdf, x='decade', y='value',color='name')
     line_fig.update_layout(
@@ -167,7 +167,7 @@ def update_line(division, click_data):
         }],
         xaxis_tickangle=-45 
     )
-    hover_template = '<b>' + data + '</b><br>Average Temperature in<br>the %{x}:<br>%{y:.2f}°C<extra></extra>'
+    hover_template = '<br>Average Temperature in<br>the %{x}:<br><b>%{y:.2f}°C</b><extra></extra>'
     line_fig.update_traces(hovertemplate=hover_template)
 
     return line_fig            
@@ -278,9 +278,7 @@ def update_disaster_bar(division, disaster_type, island_group):
                 curr_disaster = 'Region_drought'
             case _:
                 return
-        island_disaster = Region_gdf[Region_gdf['Island Group'] == island_group].groupby('Region')[curr_disaster].sum().sort_values(ascending=True)
-        x = island_disaster.values
-        y = island_disaster.index
+        island_disaster = Region_gdf[Region_gdf['Island Group'] == island_group].drop(columns=['geometry', 'Area Name']).groupby(['Island Group', 'Region']).sum().reset_index().sort_values(by=curr_disaster, ascending=True, ignore_index=True)
     elif division == 'Province':
         curr_division = 'Area Name'
         match disaster_type:
@@ -300,12 +298,13 @@ def update_disaster_bar(division, disaster_type, island_group):
                 curr_disaster = 'Drought Count'
             case _:
                 return
-        island_disaster = Region_gdf[(Region_gdf['Island Group'] == island_group)].sort_values(by='Total Disaster Count', ascending=True)
-        x = curr_disaster
-        y = curr_division
+        island_disaster = Region_gdf[(Region_gdf['Island Group'] == island_group)].drop(columns=['geometry']).sort_values(by=curr_disaster, ascending=True, ignore_index=True)
     else:
         return
     # Create stacked bar plot using Plotly Express
+
+    x = curr_disaster
+    y = curr_division
     bar_fig = px.bar(island_disaster,
                 x=x,  
                 y=y,  
@@ -320,6 +319,6 @@ def update_disaster_bar(division, disaster_type, island_group):
     )
     hover_template = '<b>%{customdata[0]}</b><br>' + disaster_type + ' Count: %{x}<extra></extra>'
     bar_fig.update_traces(hovertemplate=hover_template,
-                    customdata=Region_gdf[[curr_division]])
-
+                    customdata=island_disaster[[curr_division]])
+    
     return bar_fig

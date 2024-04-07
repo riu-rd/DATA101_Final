@@ -134,7 +134,7 @@ def update_bar(region, species_type, bio_switch, click_data):
     #     filtered_data = biodiversity_gdf[(biodiversity_gdf['area_type'].isin(['Sea']))].reset_index().drop(columns='index')
     # else:
     
-    filtered_data = biodiversity_gdf[biodiversity_gdf['island_group'] == region].sort_values(by=species_type, ascending=True).reset_index().drop(columns='index')
+    filtered_data = biodiversity_gdf[biodiversity_gdf['island_group'] == region].sort_values(by=species_type, ascending=True, ignore_index=True)
     
     if species_type == "total_species":
         txt = "Total"
