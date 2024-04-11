@@ -279,12 +279,19 @@ def update_bar_fig(island_value, switch):
     Input('temp-map-dropdown', 'value')
 )
 def update_map_fig(decade_value):
+    tempscale = [
+        [0, 'blue'],
+        [0.75, 'red'],
+        [1, 'rgb(255, 96, 96)']
+    ]
+
     map_fig = px.choropleth_mapbox(temperature_gdf,
                                     geojson=temperature_gdf.geometry,
                                     locations=temperature_gdf.index,
                                     color=decade_value,
-                                    color_continuous_scale='turbo',
+                                    color_continuous_scale=tempscale,
                                     range_color=[25, 33],
+                                    # color_continuous_midpoint=28,
                                     mapbox_style='streets',
                                     zoom=5,
                                     center={"lat": 12.8797, "lon": 122.7740},
@@ -293,7 +300,7 @@ def update_map_fig(decade_value):
     map_fig.update_layout(
         coloraxis_colorbar=dict(title=f"{remove_value(decade_value)}<br>Average<br>Temperature(°C)", yanchor="top", xanchor='left',
                                 y=1, x=0, ticks="outside", ticklabelposition="outside left", thickness=10, title_font_color='#0c232c',
-                                tickvals=[i for i in range(25, 33)],
+                                tickvals=[i for i in range(0, 33)],
                                 tickmode='array',
                                 ticksuffix='°C',
                                 tickfont=dict(

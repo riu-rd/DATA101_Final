@@ -14,6 +14,7 @@ px.set_mapbox_access_token(MAPBOX_TOKEN)
 # Import Data
 biodiversity_gdf = gpd.read_file(datasets_folder / 'biodiversity.geojson')
 temperature_gdf = gpd.read_file(datasets_folder / 'temperature.geojson')
+biodiversity_gdf = biodiversity_gdf.rename(columns={"Critically Endangered": "Critical"})
 
 melt_value = temperature_gdf.drop(columns=[col for col in temperature_gdf.columns if 'TempDiff' in col])
 melt_value.columns = [col.split('_')[0] if '_value' in col else col for col in melt_value.columns]
@@ -38,7 +39,7 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
                                 id='bio-switch',
                                 on=False,
                                 color="#b58900",
-                                label="Show Avg Temp Increase Per Province"
+                                label="Show Avg Temp Increase Per Province",
                             ),
                 html.H4(className="mt-2", children=[
                     "Exploring Biodiversity in the Philippines"
@@ -46,22 +47,22 @@ layout = dbc.Container(className="d-flex justify-content-center align-items-cent
                 html.P(className="", children=[
                     "Discover the rich biodiversity of the Philippines and understand its distribution across different regions. Use the selector to filter by geographic region and explore the geospatial distribution of biodiversity as well as the composition of endangered species."
                 ]),
+                html.Div(className='w-100', children=[
+                        dcc.Dropdown(options=[{'label': 'Total', 'value': 'total_species'},
+                                {'label': 'Critically Endangered', 'value': 'Critical'},
+                                {'label': 'Endangered', 'value': 'Endangered'},
+                                {'label': 'Vulnerable', 'value': 'Vulnerable'}],
+                                value='total_species', id='species-dropdown', 
+                                multi=False, searchable=False, clearable=False)
+                ]),
                 dcc.Loading(type="circle", children=[dcc.Graph(id="biodiversity-choropleth")])
             ])
         ]),
         dbc.Col(className="rounded z-3 biodiversity-map-height overflow-hidden", width=12, md=8, children=[
             html.Div(className="text-dark z-3 align-self-start", children=[
                 html.Div(className='d-flex flex-row justify-content-between align-items-center', children=[
-                    html.Div(className='w-50', children=[
+                    html.Div(className='w-100', children=[
                         dcc.Dropdown(options=['Luzon', 'Visayas', 'Mindanao'], value='Luzon', id='region-dropdown', multi=False, searchable=False, clearable=False)
-                    ]),
-                    html.Div(className='w-50', children=[
-                        dcc.Dropdown(options=[{'label': 'Total', 'value': 'total_species'},
-                                {'label': 'Critically Endangered', 'value': 'Critically Endangered'},
-                                {'label': 'Endangered', 'value': 'Endangered'},
-                                {'label': 'Vulnerable', 'value': 'Vulnerable'}],
-                                value='total_species', id='species-dropdown', 
-                                multi=False, searchable=False, clearable=False)
                     ])
                 ]),
                 html.Div(children=[
@@ -100,7 +101,7 @@ def update_choropleth(region, species_type):
         txt = species_type
     # Create choropleth map using Plotly Express
     choropleth_fig = px.choropleth_mapbox(filtered_data,
-                                            height=550,
+                                            height=500,
                                            geojson=filtered_data.geometry,
                                            locations=filtered_data.index,
                                            color=species_type,  # Change based on biodiversity metric
@@ -127,19 +128,14 @@ def update_choropleth(region, species_type):
 # Bar Figure
 @callback(
     Output('endangered-species-bar', 'figure'),
-    [Input('region-dropdown', 'value'), Input('species-dropdown', 'value'), Input('bio-switch', 'on'), Input('biodiversity-choropleth', 'clickData')]
+    [Input('region-dropdown', 'value'), Input('bio-switch', 'on'), Input('biodiversity-choropleth', 'clickData')]
 )
-def update_bar(region, species_type, bio_switch, click_data):
+def update_bar(region, bio_switch, click_data):
     # if region == "Sea":
     #     filtered_data = biodiversity_gdf[(biodiversity_gdf['area_type'].isin(['Sea']))].reset_index().drop(columns='index')
     # else:
     
-    filtered_data = biodiversity_gdf[biodiversity_gdf['island_group'] == region].sort_values(by=species_type, ascending=True, ignore_index=True)
-    
-    if species_type == "total_species":
-        txt = "Total"
-    else:
-        txt = species_type
+    filtered_data = biodiversity_gdf[(biodiversity_gdf['area_type'].isin(['Land'])) & (biodiversity_gdf['island_group'].isin([region]))].sort_values(by='total_species', ascending=True, ignore_index=True)
     
     if bio_switch:
         if click_data is not None:
@@ -178,17 +174,34 @@ def update_bar(region, species_type, bio_switch, click_data):
 
     else:
         bar_fig = px.bar(filtered_data,
-                        x=species_type,
-                        y='name',
-                        title=txt + " Species Composition in " + region,
-                        orientation='h',
-                        height=750,
-                        color_discrete_sequence=['lightblue']
-                        )
+             x=['Vulnerable', 'Endangered', 'Critical'],  
+             y='name',  
+             title='Number of Unique Species<br>at Risk in ' + region,
+             orientation='h',  
+             height=750,  
+             color_discrete_sequence=['yellow', 'orange', 'red'], 
+             )
         bar_fig.update_layout(
-            xaxis_title=txt + " Count",
-            yaxis_title="Province",
+            xaxis_title='Unique Species', 
+            yaxis_title='Province',
+            legend_title='IUCN Category',
+            legend=dict(
+                x=0.99,
+                y=0.01,
+                xanchor='right',
+                yanchor='bottom',
+                traceorder='normal',
+                font=dict(
+                    family='Arial',
+                    size=12,
+                    color='black'
+                ),
+                bgcolor='rgba(255, 255, 255, 0.6)',
+                bordercolor='rgba(0, 0, 0, 0.6)',
+                borderwidth=1,
+            ),
+            margin=dict(l=0, r=0, t=70, b=60)
         )
-        hover_template = '<b>%{y}</b><br>' + txt + ' Count: %{x}<extra></extra>'
+        hover_template = '<b>%{y}</b><br>Unique Species: %{x}<extra></extra>'
         bar_fig.update_traces(hovertemplate=hover_template)
         return bar_fig
