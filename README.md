@@ -40,12 +40,13 @@ All files that are used to do Exploratory Data Analysis is stored in this [Googl
 
 ### Installing Dependencies for the application
 
-- In your CLI, go to the root directory of the repository. There should be a requirements.txt file there.
-- Install dependencies by running the following commands: (Note that you should still be inside your virtual environment)
+- In your CLI, go to the root directory of the repository. There should be a ```requirements.txt``` file there.
+- <em>**OPTIONAL:** Uncomment Lines 3 - 7 in ```requirements.txt``` if you want to also run the EDA files</em>
+- <em>**OPTIONAL:** Install gdal to run temperature EDA files. If you only want the app, you do not need to install this:</em>
   ```bash
   conda install -c conda-forge gdal
   ```
-- OPTIONAL: Uncomment Lines 3 - 7 in ```requirements.txt``` if you want to also run the EDA files
+- Install dependencies:
   ```bash
   pip install -r requirements.txt
   ```
@@ -61,6 +62,6 @@ All files that are used to do Exploratory Data Analysis is stored in this [Googl
 python index.py
 ```
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+App deployed using Docker and Hugging Face in [Klima Insights Website](https://huggingface.co/spaces/riu-rd/klima-insights)
 
-App deployed using Docker and Hugging Face.
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
